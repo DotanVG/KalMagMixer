@@ -4,7 +4,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    public int currentLoop = 1; // מספר האיטרציה (שלב)
+    public int currentLoop = 0; // מספר האיטרציה (שלב)
     public GameState state = GameState.Playing;
 
     void Awake()
@@ -20,6 +20,10 @@ public class GameManager : MonoBehaviour
 
     public void NextLoop()
     {
+        if (currentLoop == 1)
+        {
+            AudioManager.Instance.StartMainMusic();
+        }
         currentLoop++;
         // אפשר להפעיל פה אפקטים, סאונד, קושי משתנה וכו'
         AudioManager.Instance.PlaySFX(AudioManager.Instance.sfx_magic);

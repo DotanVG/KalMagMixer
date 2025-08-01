@@ -49,12 +49,8 @@ public class AudioManager : MonoBehaviour
 
     private void Start()
     {
-        // Start only the main track at the beginning (if assigned)
-        if (loopTracks[0] != null)
-        {
-            musicSources[0].clip = loopTracks[0];
-            musicSources[0].Play();
-        }
+        // DO NOT start main track here.
+        // It will be started on first loop transition.
     }
 
     private void Update()
@@ -95,6 +91,20 @@ public class AudioManager : MonoBehaviour
     public void PlayMagicSFX()
     {
         PlaySFX(sfx_magic);
+    }
+
+    /// <summary>
+    /// Start the main music track (index 0), for when the first loop is reached.
+    /// </summary>
+    public void StartMainMusic()
+    {
+        if (loopTracks[0] != null && !musicSources[0].isPlaying)
+        {
+            musicSources[0].clip = loopTracks[0];
+            musicSources[0].time = 0f;
+            musicSources[0].Play();
+            prevMainTime = 0f; // Reset loop detection
+        }
     }
 
     /// <summary>
