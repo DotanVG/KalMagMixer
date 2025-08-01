@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: 47217ce798ad4fe4fb7771060095e9da
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - sfx_jump: {fileID: 8300000, guid: 4deade14f78b6a140bd728f3228b219b, type: 3}
+  - sfx_magic: {fileID: 8300000, guid: e2ed99bd89d0732448eb88fa56b6a5fb, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -21,9 +21,10 @@ public class GameManager : MonoBehaviour
     public void NextLoop()
     {
         currentLoop++;
-        // עדכן UI, אתחל שחקן וכו'
-        Debug.Log("Loop: " + currentLoop);
         // אפשר להפעיל פה אפקטים, סאונד, קושי משתנה וכו'
+        AudioManager.Instance.PlaySFX(AudioManager.Instance.sfx_magic);
+        AudioManager.Instance.NextLoopMusic();
+        Debug.Log("Loop: " + currentLoop);
     }
 
     public void SetGameState(GameState newState)

@@ -51,7 +51,9 @@ namespace Player
             {
                 rb.velocity = new Vector2(rb.velocity.x, jumpForce);
                 isGrounded = false;
-                playerAnim?.Jump();
+                playerAnim?.Jump(); 
+                AudioManager.Instance.PlayJumpSFX();
+
             }
 
             // Duck
