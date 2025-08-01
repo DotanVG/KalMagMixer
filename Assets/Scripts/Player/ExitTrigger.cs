@@ -10,6 +10,8 @@ public class ExitTrigger : MonoBehaviour
             if (player != null)
             {
                 player.Respawn();
+                GameManager.Instance.NextLoop();
+
             }
         }
     }
