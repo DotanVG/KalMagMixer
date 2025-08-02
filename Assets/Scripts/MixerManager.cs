@@ -1,60 +1,81 @@
+using System.Linq;
 using UnityEngine;
 
 /// <summary>
-/// Lets you toggle music tracks 1-8 (keys 1-8, both top row and numpad),
-/// and disables/enables obstacles with the matching trackIndex.
+/// Manages keyboard input for toggling music tracks and updates UI/buttons/obstacles accordingly.
 /// </summary>
 public class MixerManager : MonoBehaviour
 {
-    void Update()
+    private MixerButtonUI[] allButtons;
+    private AudioManager audioManager;
+
+    private void Start()
     {
-        // For each key 1-8, check if either AlphaN or KeypadN was pressed
-        if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
-            HandleTrackToggle(1);
-        if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2))
-            HandleTrackToggle(2);
-        if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3))
-            HandleTrackToggle(3);
-        if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4))
-            HandleTrackToggle(4);
-        if (Input.GetKeyDown(KeyCode.Alpha5) || Input.GetKeyDown(KeyCode.Keypad5))
-            HandleTrackToggle(5);
-        if (Input.GetKeyDown(KeyCode.Alpha6) || Input.GetKeyDown(KeyCode.Keypad6))
-            HandleTrackToggle(6);
-        if (Input.GetKeyDown(KeyCode.Alpha7) || Input.GetKeyDown(KeyCode.Keypad7))
-            HandleTrackToggle(7);
-        if (Input.GetKeyDown(KeyCode.Alpha8) || Input.GetKeyDown(KeyCode.Keypad8))
-            HandleTrackToggle(8);
+        allButtons = FindObjectsOfType<MixerButtonUI>();
+        audioManager = AudioManager.Instance;
+
+        // Start all buttons OFF and transparent
+        foreach (var button in allButtons)
+            button.SetActiveState(false);
+    }
+
+    private void Update()
+    {
+        int currentLoop = GameManager.Instance.CurrentLoop;
+
+        // Only allow toggling tracks that are unlocked (up to currentLoop)
+        for (int i = 1; i <= currentLoop; i++)
+        {
+            KeyCode key = (KeyCode)System.Enum.Parse(typeof(KeyCode), "Alpha" + i);
+            if (Input.GetKeyDown(key))
+            {
+                ToggleTrack(i);
+            }
+        }
     }
 
     /// <summary>
-    /// Toggle mute state for the given track (1-based), and update obstacles with matching trackIndex.
+    /// Force a channel ON visually and audibly, used by GameManager at new loop.
     /// </summary>
-    /// <param name="trackIdx">1-based track index (as set in MixerObstacle)</param>
-    private void HandleTrackToggle(int trackIdx)
+    public void ForceTrackOn(int trackIndex)
     {
-        Debug.Log($"Key {trackIdx} pressed, toggling trackIndex={trackIdx}");
+        // Music
+        var src = audioManager.GetMusicSource(trackIndex - 1); // 0-based
+        if (src != null)
+            src.volume = 0.5f;
 
-        // Music: get AudioSource for this track (subtract 1 for zero-based array)
-        var src = AudioManager.Instance.GetMusicSource(trackIdx - 1);
-        if (src == null)
-        {
-            Debug.LogWarning($"No AudioSource for track {trackIdx - 1}");
-            return;
-        }
+        // Mixer button UI
+        foreach (var btn in allButtons)
+            if (btn.trackIndex == trackIndex)
+                btn.SetActiveState(true);
+
+        // Obstacles
+        MixerObstacle[] allObstacles = FindObjectsOfType<MixerObstacle>();
+        foreach (var obs in allObstacles)
+            if (obs.trackIndex == trackIndex)
+                obs.SetActiveObstacle(true);
+    }
+
+    /// <summary>
+    /// Toggle track ON/OFF and update visuals/obstacles.
+    /// </summary>
+    private void ToggleTrack(int trackIndex)
+    {
+        var src = audioManager.GetMusicSource(trackIndex - 1);
+        if (src == null) return;
 
         bool isNowMuted = src.volume > 0.1f;
         src.volume = isNowMuted ? 0f : 0.5f;
-        Debug.Log($"Track {trackIdx} {(isNowMuted ? "muted" : "unmuted")}");
 
-        // Obstacles: toggle all with this track index
+        // Update corresponding mixer button
+        foreach (var btn in allButtons)
+            if (btn.trackIndex == trackIndex)
+                btn.SetActiveState(!isNowMuted);
+
+        // Update obstacles
         MixerObstacle[] allObstacles = FindObjectsOfType<MixerObstacle>();
         foreach (var obs in allObstacles)
-        {
-            if (obs.trackIndex == trackIdx)
-            {
+            if (obs.trackIndex == trackIndex)
                 obs.SetActiveObstacle(!isNowMuted);
-            }
-        }
     }
 }

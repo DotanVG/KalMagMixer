@@ -1,8 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// AudioManager: SFX + Multi-track music with mute/unmute control.
-/// All music tracks start in sync, but only the selected ones are audible per loop.
+/// AudioManager: Handles SFX and multi-track music with mute/unmute.
 /// </summary>
 public class AudioManager : MonoBehaviour
 {
@@ -13,11 +12,11 @@ public class AudioManager : MonoBehaviour
     public AudioClip sfx_magic;
 
     [Header("Music Tracks (Loops)")]
-    public AudioClip[] loopTracks = new AudioClip[8];
+    public AudioClip[] loopTracks = new AudioClip[8]; // Assign in Inspector (size 8)
 
     private AudioSource sfxSource;
     private AudioSource[] musicSources = new AudioSource[8];
-    private int currentUnmuted = 0; // How many tracks are currently unmuted
+    private int currentUnmuted = 0;
 
     private void Awake()
     {
@@ -38,37 +37,30 @@ public class AudioManager : MonoBehaviour
         {
             musicSources[i] = gameObject.AddComponent<AudioSource>();
             musicSources[i].loop = true;
-            musicSources[i].volume = 0f; // Start fully muted!
+            musicSources[i].volume = 0f;
         }
     }
 
     /// <summary>
-    /// Stage 0: No music. Stage 1: Start all tracks, unmute the first, mute the rest.
+    /// Start all music tracks in sync, but only unmute track 1.
     /// </summary>
     public void StartFirstLoopMusic()
     {
-        Debug.Log("StartFirstLoopMusic CALLED!");
         for (int i = 0; i < loopTracks.Length; i++)
         {
             if (loopTracks[i] != null)
             {
-                Debug.Log($"Track {i}: {loopTracks[i].name}, source: {musicSources[i]}");
                 musicSources[i].clip = loopTracks[i];
                 musicSources[i].time = 0f;
                 musicSources[i].Play();
-                musicSources[i].volume = (i == 0) ? 0.5f : 0f;
-            }
-            else
-            {
-                Debug.Log($"Track {i}: NULL");
+                musicSources[i].volume = (i == 0) ? 0.5f : 0f; // Only first is ON
             }
         }
         currentUnmuted = 1;
     }
 
-
     /// <summary>
-    /// Unmute the next track (volume = 0.5), keep all previous tracks unmuted.
+    /// Unmute the next track in order.
     /// </summary>
     public void NextLoopMusic()
     {
@@ -80,7 +72,7 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Mute all tracks and stop music.
+    /// Stop all music and mute all tracks.
     /// </summary>
     public void StopAllMusic()
     {
@@ -102,12 +94,11 @@ public class AudioManager : MonoBehaviour
     public void PlayMagicSFX() => PlaySFX(sfx_magic);
 
     /// <summary>
-    /// Get the AudioSource for a music track by index (0-7).
+    /// Get music AudioSource by index (0-7).
     /// </summary>
     public AudioSource GetMusicSource(int trackIdx)
     {
         if (trackIdx < 0 || trackIdx >= musicSources.Length) return null;
         return musicSources[trackIdx];
     }
-
 }
