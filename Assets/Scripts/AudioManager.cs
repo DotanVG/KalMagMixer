@@ -100,4 +100,14 @@ public class AudioManager : MonoBehaviour
     }
     public void PlayJumpSFX() => PlaySFX(sfx_jump);
     public void PlayMagicSFX() => PlaySFX(sfx_magic);
+
+    /// <summary>
+    /// Get the AudioSource for a music track by index (0-7).
+    /// </summary>
+    public AudioSource GetMusicSource(int trackIdx)
+    {
+        if (trackIdx < 0 || trackIdx >= musicSources.Length) return null;
+        return musicSources[trackIdx];
+    }
+
 }
