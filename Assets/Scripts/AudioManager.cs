@@ -1,8 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Singleton AudioManager for SFX and synchronized music tracks.
-/// Handles loop synchronization so new tracks join only on main track loop restart.
+/// AudioManager: SFX + Multi-track music with mute/unmute control.
+/// All music tracks start in sync, but only the selected ones are audible per loop.
 /// </summary>
 public class AudioManager : MonoBehaviour
 {
@@ -13,19 +13,14 @@ public class AudioManager : MonoBehaviour
     public AudioClip sfx_magic;
 
     [Header("Music Tracks (Loops)")]
-    public AudioClip[] loopTracks = new AudioClip[8]; // Up to 8 channels/tracks
+    public AudioClip[] loopTracks = new AudioClip[8];
 
     private AudioSource sfxSource;
     private AudioSource[] musicSources = new AudioSource[8];
-
-    // Synchronization fields
-    private int nextToAdd = 1; // Next track index to queue for syncing
-    private bool[] trackPending = new bool[8]; // Pending tracks waiting to sync on loop
-    private float prevMainTime = 0f;
+    private int currentUnmuted = 0; // How many tracks are currently unmuted
 
     private void Awake()
     {
-        // Singleton pattern
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -34,119 +29,75 @@ public class AudioManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // SFX setup
+        // SFX
         sfxSource = gameObject.AddComponent<AudioSource>();
         sfxSource.playOnAwake = false;
 
-        // Music channels setup
+        // Music
         for (int i = 0; i < musicSources.Length; i++)
         {
             musicSources[i] = gameObject.AddComponent<AudioSource>();
             musicSources[i].loop = true;
-            musicSources[i].volume = 0.5f;
-        }
-    }
-
-    private void Start()
-    {
-        // DO NOT start main track here.
-        // It will be started on first loop transition.
-    }
-
-    private void Update()
-    {
-        // Only sync if main track is playing
-        if (musicSources[0].isPlaying)
-        {
-            float currTime = musicSources[0].time;
-            // If time wrapped around, loop started again
-            if (currTime < prevMainTime)
-            {
-                SyncPendingTracks();
-            }
-            prevMainTime = currTime;
+            musicSources[i].volume = 0f; // Start fully muted!
         }
     }
 
     /// <summary>
-    /// Plays a given SFX clip instantly (one-shot).
+    /// Stage 0: No music. Stage 1: Start all tracks, unmute the first, mute the rest.
     /// </summary>
+    public void StartFirstLoopMusic()
+    {
+        Debug.Log("StartFirstLoopMusic CALLED!");
+        for (int i = 0; i < loopTracks.Length; i++)
+        {
+            if (loopTracks[i] != null)
+            {
+                Debug.Log($"Track {i}: {loopTracks[i].name}, source: {musicSources[i]}");
+                musicSources[i].clip = loopTracks[i];
+                musicSources[i].time = 0f;
+                musicSources[i].Play();
+                musicSources[i].volume = (i == 0) ? 0.5f : 0f;
+            }
+            else
+            {
+                Debug.Log($"Track {i}: NULL");
+            }
+        }
+        currentUnmuted = 1;
+    }
+
+
+    /// <summary>
+    /// Unmute the next track (volume = 0.5), keep all previous tracks unmuted.
+    /// </summary>
+    public void NextLoopMusic()
+    {
+        if (currentUnmuted < loopTracks.Length && loopTracks[currentUnmuted] != null)
+        {
+            musicSources[currentUnmuted].volume = 0.5f;
+            currentUnmuted++;
+        }
+    }
+
+    /// <summary>
+    /// Mute all tracks and stop music.
+    /// </summary>
+    public void StopAllMusic()
+    {
+        foreach (var src in musicSources)
+        {
+            src.Stop();
+            src.volume = 0f;
+        }
+        currentUnmuted = 0;
+    }
+
+    // --- SFX ---
     public void PlaySFX(AudioClip clip)
     {
         if (clip != null)
             sfxSource.PlayOneShot(clip);
     }
-
-    /// <summary>
-    /// Play the jump SFX.
-    /// </summary>
-    public void PlayJumpSFX()
-    {
-        PlaySFX(sfx_jump);
-    }
-
-    /// <summary>
-    /// Play the magic SFX (e.g., when looping).
-    /// </summary>
-    public void PlayMagicSFX()
-    {
-        PlaySFX(sfx_magic);
-    }
-
-    /// <summary>
-    /// Start the main music track (index 0), for when the first loop is reached.
-    /// </summary>
-    public void StartMainMusic()
-    {
-        if (loopTracks[0] != null && !musicSources[0].isPlaying)
-        {
-            musicSources[0].clip = loopTracks[0];
-            musicSources[0].time = 0f;
-            musicSources[0].Play();
-            prevMainTime = 0f; // Reset loop detection
-        }
-    }
-
-    /// <summary>
-    /// Queue the next music track to start on the next main loop (synchronized).
-    /// </summary>
-    public void NextLoopMusic()
-    {
-        if (nextToAdd < loopTracks.Length && loopTracks[nextToAdd] != null)
-        {
-            trackPending[nextToAdd] = true;
-            nextToAdd++;
-        }
-    }
-
-    /// <summary>
-    /// Called automatically when main track restarts.
-    /// Starts all pending tracks at the same time (synchronized).
-    /// </summary>
-    private void SyncPendingTracks()
-    {
-        for (int i = 1; i < musicSources.Length; i++)
-        {
-            if (trackPending[i] && loopTracks[i] != null)
-            {
-                musicSources[i].clip = loopTracks[i];
-                musicSources[i].time = 0f;
-                musicSources[i].Play();
-                trackPending[i] = false;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Stops all music tracks (if needed).
-    /// </summary>
-    public void StopAllMusic()
-    {
-        foreach (var src in musicSources)
-            src.Stop();
-        // Reset sync state if needed
-        for (int i = 1; i < trackPending.Length; i++)
-            trackPending[i] = false;
-        nextToAdd = 1;
-    }
+    public void PlayJumpSFX() => PlaySFX(sfx_jump);
+    public void PlayMagicSFX() => PlaySFX(sfx_magic);
 }
