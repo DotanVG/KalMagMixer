@@ -7,6 +7,8 @@ TagManager:
   - Floor
   - Background
   - Sign
+  - Enemy
+  - RespawnBlock
   layers:
   - Default
   - TransparentFX
@@ -43,4 +45,19 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 524801109
+    locked: 0
+  - name: Tiles
+    uniqueID: 333256885
+    locked: 0
+  - name: Player
+    uniqueID: 3487766907
+    locked: 0
+  - name: Foreground
+    uniqueID: 2583371437
+    locked: 0
+  - name: UI
+    uniqueID: 158687217
     locked: 0

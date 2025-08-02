@@ -1,31 +1,26 @@
 using UnityEngine;
 
-/// <summary>
-/// Singleton AudioManager for SFX and synchronized music tracks.
-/// Handles loop synchronization so new tracks join only on main track loop restart.
-/// </summary>
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
 
-    [Header("SFX Clips")]
+    [Header("SFX Clips + Volumes")]
     public AudioClip sfx_jump;
-    public AudioClip sfx_magic;
+    [Range(0f, 1f)] public float sfx_jumpVolume = 0.2f;
 
-    [Header("Music Tracks (Loops)")]
-    public AudioClip[] loopTracks = new AudioClip[8]; // Up to 8 channels/tracks
+    public AudioClip sfx_magic;
+    [Range(0f, 1f)] public float sfx_magicVolume = 0.7f;
+
+    [Header("Music Tracks (Loops) + Volumes")]
+    public AudioClip[] loopTracks = new AudioClip[8];
+    [Range(0f, 1f)] public float[] loopVolumes = new float[8]; // Set in Inspector for each track
 
     private AudioSource sfxSource;
     private AudioSource[] musicSources = new AudioSource[8];
-
-    // Synchronization fields
-    private int nextToAdd = 1; // Next track index to queue for syncing
-    private bool[] trackPending = new bool[8]; // Pending tracks waiting to sync on loop
-    private float prevMainTime = 0f;
+    private int currentUnmuted = 0;
 
     private void Awake()
     {
-        // Singleton pattern
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -34,109 +29,75 @@ public class AudioManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // SFX setup
+        // One SFX source
         sfxSource = gameObject.AddComponent<AudioSource>();
         sfxSource.playOnAwake = false;
 
-        // Music channels setup
+        // Music sources
         for (int i = 0; i < musicSources.Length; i++)
         {
             musicSources[i] = gameObject.AddComponent<AudioSource>();
             musicSources[i].loop = true;
-            musicSources[i].volume = 0.5f;
+            musicSources[i].volume = 0f;
+        }
+
+        // Ensure loopVolumes array is initialized to same size as loopTracks
+        if (loopVolumes.Length != loopTracks.Length)
+        {
+            float[] temp = new float[loopTracks.Length];
+            for (int i = 0; i < temp.Length; i++)
+                temp[i] = 0.5f; // Default volume
+            loopVolumes = temp;
         }
     }
 
-    private void Start()
+    public void StartFirstLoopMusic()
     {
-        // Start only the main track at the beginning (if assigned)
-        if (loopTracks[0] != null)
+        for (int i = 0; i < loopTracks.Length; i++)
         {
-            musicSources[0].clip = loopTracks[0];
-            musicSources[0].Play();
-        }
-    }
-
-    private void Update()
-    {
-        // Only sync if main track is playing
-        if (musicSources[0].isPlaying)
-        {
-            float currTime = musicSources[0].time;
-            // If time wrapped around, loop started again
-            if (currTime < prevMainTime)
-            {
-                SyncPendingTracks();
-            }
-            prevMainTime = currTime;
-        }
-    }
-
-    /// <summary>
-    /// Plays a given SFX clip instantly (one-shot).
-    /// </summary>
-    public void PlaySFX(AudioClip clip)
-    {
-        if (clip != null)
-            sfxSource.PlayOneShot(clip);
-    }
-
-    /// <summary>
-    /// Play the jump SFX.
-    /// </summary>
-    public void PlayJumpSFX()
-    {
-        PlaySFX(sfx_jump);
-    }
-
-    /// <summary>
-    /// Play the magic SFX (e.g., when looping).
-    /// </summary>
-    public void PlayMagicSFX()
-    {
-        PlaySFX(sfx_magic);
-    }
-
-    /// <summary>
-    /// Queue the next music track to start on the next main loop (synchronized).
-    /// </summary>
-    public void NextLoopMusic()
-    {
-        if (nextToAdd < loopTracks.Length && loopTracks[nextToAdd] != null)
-        {
-            trackPending[nextToAdd] = true;
-            nextToAdd++;
-        }
-    }
-
-    /// <summary>
-    /// Called automatically when main track restarts.
-    /// Starts all pending tracks at the same time (synchronized).
-    /// </summary>
-    private void SyncPendingTracks()
-    {
-        for (int i = 1; i < musicSources.Length; i++)
-        {
-            if (trackPending[i] && loopTracks[i] != null)
+            if (loopTracks[i] != null)
             {
                 musicSources[i].clip = loopTracks[i];
                 musicSources[i].time = 0f;
                 musicSources[i].Play();
-                trackPending[i] = false;
+                musicSources[i].volume = (i == 0) ? loopVolumes[0] : 0f;
             }
+        }
+        currentUnmuted = 1;
+    }
+
+    public void NextLoopMusic()
+    {
+        if (currentUnmuted < loopTracks.Length && loopTracks[currentUnmuted] != null)
+        {
+            musicSources[currentUnmuted].volume = loopVolumes[currentUnmuted];
+            currentUnmuted++;
         }
     }
 
-    /// <summary>
-    /// Stops all music tracks (if needed).
-    /// </summary>
     public void StopAllMusic()
     {
         foreach (var src in musicSources)
+        {
             src.Stop();
-        // Reset sync state if needed
-        for (int i = 1; i < trackPending.Length; i++)
-            trackPending[i] = false;
-        nextToAdd = 1;
+            src.volume = 0f;
+        }
+        currentUnmuted = 0;
+    }
+
+    // --- SFX ---
+    public void PlaySFX(AudioClip clip, float volume = 1.0f)
+    {
+        if (clip != null)
+            sfxSource.PlayOneShot(clip, volume);
+    }
+    public void PlayJumpSFX() => PlaySFX(sfx_jump, sfx_jumpVolume);
+    public void PlayMagicSFX() => PlaySFX(sfx_magic, sfx_magicVolume);
+
+    // --- Music source getter ---
+    public AudioSource GetMusicSource(int trackIdx)
+    {
+        if (trackIdx < 0 || trackIdx >= musicSources.Length) return null;
+        return musicSources[trackIdx];
     }
 }
