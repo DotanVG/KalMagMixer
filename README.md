@@ -1,8 +1,6 @@
-<p align="center">
-  <a href="https://freeimage.host/i/FrtXRDB">
-    <img src="https://iili.io/FrtXRDB.th.png" alt="KalMag Mixer Cover" width="420"/>
-  </a>
-</p>
+<div align="center">
+  <img src="./KalMagMixer-Icon.png" alt="KalMag Mixer Logo" width="280"/>
+</div>
 
 <div align="center">
     <h1>KalMag Mixer 🎵🟨🟥🟦🟪🟩🟧🟪</h1>
