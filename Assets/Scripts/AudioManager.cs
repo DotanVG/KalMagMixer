@@ -1,18 +1,19 @@
 using UnityEngine;
 
-/// <summary>
-/// AudioManager: Handles SFX and multi-track music with mute/unmute.
-/// </summary>
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
 
-    [Header("SFX Clips")]
+    [Header("SFX Clips + Volumes")]
     public AudioClip sfx_jump;
-    public AudioClip sfx_magic;
+    [Range(0f, 1f)] public float sfx_jumpVolume = 0.2f;
 
-    [Header("Music Tracks (Loops)")]
-    public AudioClip[] loopTracks = new AudioClip[8]; // Assign in Inspector (size 8)
+    public AudioClip sfx_magic;
+    [Range(0f, 1f)] public float sfx_magicVolume = 0.7f;
+
+    [Header("Music Tracks (Loops) + Volumes")]
+    public AudioClip[] loopTracks = new AudioClip[8];
+    [Range(0f, 1f)] public float[] loopVolumes = new float[8]; // Set in Inspector for each track
 
     private AudioSource sfxSource;
     private AudioSource[] musicSources = new AudioSource[8];
@@ -28,22 +29,28 @@ public class AudioManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // SFX
+        // One SFX source
         sfxSource = gameObject.AddComponent<AudioSource>();
         sfxSource.playOnAwake = false;
 
-        // Music
+        // Music sources
         for (int i = 0; i < musicSources.Length; i++)
         {
             musicSources[i] = gameObject.AddComponent<AudioSource>();
             musicSources[i].loop = true;
             musicSources[i].volume = 0f;
         }
+
+        // Ensure loopVolumes array is initialized to same size as loopTracks
+        if (loopVolumes.Length != loopTracks.Length)
+        {
+            float[] temp = new float[loopTracks.Length];
+            for (int i = 0; i < temp.Length; i++)
+                temp[i] = 0.5f; // Default volume
+            loopVolumes = temp;
+        }
     }
 
-    /// <summary>
-    /// Start all music tracks in sync, but only unmute track 1.
-    /// </summary>
     public void StartFirstLoopMusic()
     {
         for (int i = 0; i < loopTracks.Length; i++)
@@ -53,27 +60,21 @@ public class AudioManager : MonoBehaviour
                 musicSources[i].clip = loopTracks[i];
                 musicSources[i].time = 0f;
                 musicSources[i].Play();
-                musicSources[i].volume = (i == 0) ? 0.5f : 0f; // Only first is ON
+                musicSources[i].volume = (i == 0) ? loopVolumes[0] : 0f;
             }
         }
         currentUnmuted = 1;
     }
 
-    /// <summary>
-    /// Unmute the next track in order.
-    /// </summary>
     public void NextLoopMusic()
     {
         if (currentUnmuted < loopTracks.Length && loopTracks[currentUnmuted] != null)
         {
-            musicSources[currentUnmuted].volume = 0.5f;
+            musicSources[currentUnmuted].volume = loopVolumes[currentUnmuted];
             currentUnmuted++;
         }
     }
 
-    /// <summary>
-    /// Stop all music and mute all tracks.
-    /// </summary>
     public void StopAllMusic()
     {
         foreach (var src in musicSources)
@@ -85,17 +86,15 @@ public class AudioManager : MonoBehaviour
     }
 
     // --- SFX ---
-    public void PlaySFX(AudioClip clip)
+    public void PlaySFX(AudioClip clip, float volume = 1.0f)
     {
         if (clip != null)
-            sfxSource.PlayOneShot(clip);
+            sfxSource.PlayOneShot(clip, volume);
     }
-    public void PlayJumpSFX() => PlaySFX(sfx_jump);
-    public void PlayMagicSFX() => PlaySFX(sfx_magic);
+    public void PlayJumpSFX() => PlaySFX(sfx_jump, sfx_jumpVolume);
+    public void PlayMagicSFX() => PlaySFX(sfx_magic, sfx_magicVolume);
 
-    /// <summary>
-    /// Get music AudioSource by index (0-7).
-    /// </summary>
+    // --- Music source getter ---
     public AudioSource GetMusicSource(int trackIdx)
     {
         if (trackIdx < 0 || trackIdx >= musicSources.Length) return null;

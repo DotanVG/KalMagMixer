@@ -2,6 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Controls game state, loop progression, music, and activates correct obstacle groups.
+/// Now also forces player respawn if inside any enabled obstacle after a loop change.
 /// </summary>
 public class GameManager : MonoBehaviour
 {
@@ -47,6 +48,9 @@ public class GameManager : MonoBehaviour
             if (obstaclesGroups[i] != null)
                 obstaclesGroups[i].SetActive(i < currentLoop);
         }
+
+        // --- NEW: Check if player is overlapping any newly enabled obstacle and respawn if so ---
+        Player.PlayerController.TryForceRespawnIfOverlapping();
 
         // Start/unmute music tracks as needed.
         if (currentLoop == 1)

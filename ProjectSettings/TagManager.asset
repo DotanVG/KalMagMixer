@@ -8,6 +8,7 @@ TagManager:
   - Background
   - Sign
   - Enemy
+  - RespawnBlock
   layers:
   - Default
   - TransparentFX
