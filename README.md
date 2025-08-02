@@ -62,9 +62,9 @@ Your goal: reach the exit by listening, timing, and manipulating both the level 
 
 ## 🎨 **Credits**
 
-Game Design & Development: Dotan Veretzky  
-Original Soundtrack & Sound Design: Itai Oren  
-Original Art & Sprites: Mor Yosef  
+Game Design & Development: [Dotan Veretzky](https://www.linkedin.com/in/dotan-v/)  
+Original Soundtrack & Sound Design: [Itai Oren](https://www.linkedin.com/in/itayoqa/)  
+Original Art & Sprites: [Mor Yosef](https://www.linkedin.com/in/mor-yosef-185331196/)  
 Kenney - [2D Platformer Pack](https://kenney.nl/assets/platformer-pack) (sprites & SFX)
 
 <div align="center">
